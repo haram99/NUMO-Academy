@@ -37,7 +37,7 @@ def get_image_base64(path):
 logo_base64 = get_image_base64("logo.jpg")
 
 # ---------------------------------------------------------
-# تنسيقات CSS: ضمان وضوح النصوص داخل حقول الإدخال واستجابة الموبايل
+# تنسيقات CSS: إصلاح انعكاس الشعار، منع تداخل الأيقونات، وضبط الجوال
 # ---------------------------------------------------------
 st.markdown(
     f"""
@@ -69,12 +69,14 @@ st.markdown(
         max-width: 100% !important;
     }}
 
+    /* حاوية الشعار مع إزالة أي انعكاس مرآتي ودوران أفقي سليم */
     .sphere-logo-container {{
         perspective: 1000px;
         display: flex;
         justify-content: center;
         align-items: center;
         margin: 10px 0;
+        direction: ltr !important; /* ضمان عدم انعكاس عناصر الشعار الداخلية */
     }}
 
     .sphere-logo {{
@@ -174,7 +176,6 @@ st.markdown(
         font-size: clamp(13px, 2.2vw, 15px) !important;
     }}
 
-    /* إصلاح شامل لمربعات النصوص (الاسم ورقم الجوال) وتأكيد ظهور الكتابة بلون أبيض صريح */
     input[type="text"] {{
         background-color: #0b0f2e !important;
         color: #ffffff !important;

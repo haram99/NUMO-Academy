@@ -37,7 +37,7 @@ def get_image_base64(path):
 logo_base64 = get_image_base64("logo.jpg")
 
 # ---------------------------------------------------------
-# تنسيقات CSS: إصلاح تداخل النصوص، ضبط الاتجاهات، وتحسين العرض على الجوال
+# تنسيقات CSS: تحسين تجربة الموبايل وحقول الإدخال
 # ---------------------------------------------------------
 st.markdown(
     f"""
@@ -79,15 +79,15 @@ st.markdown(
     }}
 
     .sphere-logo {{
-        width: 90px;
-        height: 90px;
+        width: 100px;
+        height: 100px;
         border-radius: 50%;
         object-fit: cover;
         border: 3px solid transparent;
         background:
             linear-gradient(#0b0f2e, #0b0f2e) padding-box,
             linear-gradient(135deg, #22d3ee, #a855f7, #f472b6) border-box;
-        box-shadow: 0 0 20px rgba(168, 85, 247, 0.4);
+        box-shadow: 0 0 24px rgba(168, 85, 247, 0.45), 0 0 10px rgba(34, 211, 238, 0.35);
         animation: horizontalSpin 6s linear infinite;
         transform-style: preserve-3d;
     }}
@@ -97,52 +97,52 @@ st.markdown(
         100% {{ transform: rotateY(360deg); }}
     }}
 
-    /* إصلاح البطاقات ومنع أي تداخل في النصوص على الجوال */
+    @media (max-width: 640px) {{
+        .sphere-logo {{ width: 76px; height: 76px; }}
+    }}
+
     .main-card {{
         background: rgba(255, 255, 255, 0.05);
         backdrop-filter: blur(14px);
         -webkit-backdrop-filter: blur(14px);
         border: 1px solid rgba(255, 255, 255, 0.10);
-        border-radius: 16px;
-        padding: 16px;
-        margin-top: 10px;
-        margin-bottom: 15px;
-        box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+        border-radius: 20px;
+        padding: clamp(16px, 3vw, 26px);
+        margin-top: 8px;
+        margin-bottom: 20px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.35);
         color: #eef2ff !important;
-        word-break: normal;
-        overflow-wrap: break-word;
+        word-break: break-word;
     }}
 
     .fun-card {{
         background: rgba(255, 255, 255, 0.045);
         backdrop-filter: blur(10px);
         -webkit-backdrop-filter: blur(10px);
-        border-radius: 14px;
-        padding: 14px;
+        border-radius: 16px;
+        padding: clamp(14px, 2.5vw, 20px);
         margin: 10px 0;
-        box-shadow: 0 4px 16px rgba(0,0,0,0.25);
-        border-right: 4px solid #22d3ee;
+        box-shadow: 0 6px 20px rgba(0,0,0,0.28);
+        border-right: 5px solid #22d3ee;
         border-top: 1px solid rgba(255,255,255,0.06);
         border-bottom: 1px solid rgba(255,255,255,0.06);
         border-left: 1px solid rgba(255,255,255,0.06);
         color: #eef2ff !important;
-        word-break: normal;
-        overflow-wrap: break-word;
+        word-break: break-word;
     }}
 
     .fun-card h3, .fun-card h4 {{
         background: linear-gradient(90deg, #22d3ee, #a855f7);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
-        display: block;
-        margin-bottom: 6px;
+        display: inline-block;
     }}
 
     .badge {{
         display: inline-block;
-        padding: 3px 10px;
+        padding: 3px 12px;
         border-radius: 999px;
-        font-size: 11px;
+        font-size: 12px;
         font-weight: 700;
         margin-bottom: 8px;
         background: linear-gradient(90deg, rgba(34,211,238,0.18), rgba(168,85,247,0.18));
@@ -151,19 +151,19 @@ st.markdown(
     }}
 
     .title-glow {{
-        font-size: clamp(18px, 4.2vw, 32px);
+        font-size: clamp(20px, 4.6vw, 36px);
         font-weight: 900;
         background: linear-gradient(90deg, #22d3ee, #a855f7, #f472b6);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         text-align: right;
-        line-height: 1.4;
+        line-height: 1.35;
     }}
 
     .subtitle {{
         text-align: right;
         color: #94a3b8;
-        font-size: clamp(11px, 2.2vw, 13px);
+        font-size: clamp(12px, 2.4vw, 14px);
     }}
 
     hr {{
@@ -190,21 +190,21 @@ st.markdown(
     .stTextInput label {{
         color: #e2e8f0 !important;
         font-weight: 700 !important;
-        font-size: 14px !important;
+        font-size: 15px !important;
     }}
 
     .stButton>button, .stFormSubmitButton>button {{
         background: linear-gradient(90deg, #0ea5e9, #a855f7);
         color: white;
         font-weight: 700;
-        font-size: 15px;
+        font-size: clamp(14px, 2.4vw, 16px);
         border-radius: 12px;
-        padding: 10px 20px;
+        padding: 12px 24px;
         border: none;
         box-shadow: 0 4px 16px rgba(168, 85, 247, 0.35);
         transition: all 0.2s ease;
         width: 100%;
-        min-height: 44px;
+        min-height: 46px;
     }}
     .stButton>button:hover, .stFormSubmitButton>button:hover {{
         transform: translateY(-2px);
@@ -223,12 +223,10 @@ st.markdown(
 
     .stRadio > div {{ gap: 6px; }}
 
-    /* تكديس الأعمدة بسلاسة تامة على الجوال دون أي تداخل */
-    @media (max-width: 768px) {{
+    @media (max-width: 640px) {{
         div[data-testid="column"] {{
             width: 100% !important;
             flex: 1 1 100% !important;
-            margin-bottom: 10px;
         }}
     }}
     </style>
@@ -289,13 +287,13 @@ with col2:
         st.markdown(
             f"""
             <div class="sphere-logo-container" style="margin:0;">
-                <img src="data:image/jpeg;base64,{logo_base64}" class="sphere-logo" style="width:50px; height:50px;">
+                <img src="data:image/jpeg;base64,{logo_base64}" class="sphere-logo" style="width:64px; height:64px;">
             </div>
             """,
             unsafe_allow_html=True,
         )
     else:
-        st.image("logo.jpg", width=50)
+        st.image("logo.jpg", width=64)
 with col1:
     st.markdown('<div class="title-glow">منصة الابتكار الرقمي والذكاء الاصطناعي</div>', unsafe_allow_html=True)
     st.markdown(
@@ -320,9 +318,10 @@ if page == "🏠 الرئيسية":
         <div class="main-card" style="text-align:center;">
         <span class="badge">بوابة التعلّم الرقمي</span>
         <h2>مرحبًا بك في بوابة مهندسي وقادة المستقبل الرقمي! 🚀</h2>
-        <p style="font-size:15px; color:#cbd5e1; line-height:1.7;">
+        <p style="font-size:16px; color:#cbd5e1; line-height:1.8;">
         نعيش اليوم ثورة تكنولوجية غير مسبوقة يقودها الذكاء الاصطناعي، الحوسبة السحابية، وتحليل البيانات الضخمة.
-        هذه المنصة صُممت خصيصًا لتزويدك بالمفاهيم الأساسية والمتقدمة لمواكبة متطلبات سوق العمل الرقمي الحديث.
+        هذه المنصة صُممت خصيصًا لتزويدك بالمفاهيم الأساسية والمتقدمة اللازمة لمواكبة متطلبات سوق العمل الرقمي الحديث،
+        وتأهيلك لاختيار تخصصات جامعية ومسارات مهنية واعدة في هذا المجال.
         </p>
         </div>
         """,
@@ -332,9 +331,9 @@ if page == "🏠 الرئيسية":
     # زر مباشر وسريع للمسابقة يظهر بوضوح تام على الجوال في الصفحة الرئيسية
     st.markdown(
         """
-        <div class="fun-card" style="text-align: center; border-right: 4px solid #a855f7;">
-        <h3>🏆 المسابقة والتحدي التقني</h3>
-        <p style="font-size: 14px; margin-bottom: 10px;">اختبر معلوماتك وسجل مشاركتك في سحب الأكاديمية الآن!</p>
+        <div class="fun-card" style="text-align: center; border-right: 5px solid #a855f7;">
+        <h3>🏆 هل أنت مستعد لاختبار معلوماتك؟</h3>
+        <p>انتقل فوراً إلى التحدي التقني وسجل مشاركتك في سحب الأكاديمية.</p>
         </div>
         """,
         unsafe_allow_html=True,
@@ -343,25 +342,23 @@ if page == "🏠 الرئيسية":
         st.session_state.main_navigation = "🎯 التحدي التقني والمسابقة"
         st.rerun()
 
-    st.markdown("<br>", unsafe_allow_html=True)
-
     c1, c2, c3 = st.columns(3)
     with c1:
         st.markdown(
             '<div class="fun-card"><h3>🌐 التحول الرقمي</h3>'
-            '<p style="font-size: 14px;">البنى التحتية، إنترنت الأشياء (IoT)، والحوسبة السحابية.</p></div>',
+            '<p>البنى التحتية، إنترنت الأشياء (IoT)، والحوسبة السحابية بأنواعها الثلاثة.</p></div>',
             unsafe_allow_html=True,
         )
     with c2:
         st.markdown(
             '<div class="fun-card"><h3>🧠 نماذج الذكاء</h3>'
-            '<p style="font-size: 14px;">التعلم الآلي، الشبكات العصبية، ومعالجة اللغات الطبيعية.</p></div>',
+            '<p>التعلم الآلي، الشبكات العصبية، معالجة اللغة الطبيعية، والنماذج التوليدية.</p></div>',
             unsafe_allow_html=True,
         )
     with c3:
         st.markdown(
             '<div class="fun-card"><h3>🛡️ أمن المعلومات</h3>'
-            '<p style="font-size: 14px;">التهديدات السيبرانية الشائعة وأخلاقيات خوارزميات الذكاء.</p></div>',
+            '<p>التهديدات السيبرانية الشائعة، وأخلاقيات استخدام خوارزميات الذكاء الاصطناعي.</p></div>',
             unsafe_allow_html=True,
         )
 
@@ -375,22 +372,33 @@ elif page == "💡 أساسيات التحول الرقمي":
         """
         <div class="fun-card">
         <h3>ما هو التحول الرقمي؟</h3>
-        <p style="font-size:15px; line-height:1.7;">
+        <p style="font-size:15.5px; line-height:1.8;">
         التحول الرقمي ليس مجرد استخدام أجهزة حاسوب، بل هو إعادة هندسة شاملة للعمليات والخدمات
-        باستخدام التقنية لرفع الكفاءة، وتحسين تجربة المستخدم، واتخاذ قرارات مبنية على البيانات.
+        باستخدام التقنية لرفع الكفاءة، وتحسين تجربة المستخدم، واتخاذ قرارات مبنية على البيانات
+        بدلًا من التخمين.
         </p>
         </div>
         """,
         unsafe_allow_html=True,
     )
 
+    st.markdown("### ☁️ أنواع الحوسبة السحابية")
     c1, c2, c3 = st.columns(3)
     with c1:
-        st.markdown('<div class="fun-card"><h4>IaaS</h4><p style="font-size:14px;">بنية تحتية كخدمة وتخزين افتراضي.</p></div>', unsafe_allow_html=True)
+        st.markdown(
+            '<div class="fun-card"><h4>IaaS</h4><p>بنية تحتية كخدمة: خوادم وتخزين افتراضي جاهز للاستخدام، مثل AWS EC2.</p></div>',
+            unsafe_allow_html=True,
+        )
     with c2:
-        st.markdown('<div class="fun-card"><h4>PaaS</h4><p style="font-size:14px;">منصة كخدمة لتشغيل التطبيقات.</p></div>', unsafe_allow_html=True)
+        st.markdown(
+            '<div class="fun-card"><h4>PaaS</h4><p>منصة كخدمة: بيئة جاهزة لبناء وتشغيل التطبيقات دون القلق بشأن الخوادم.</p></div>',
+            unsafe_allow_html=True,
+        )
     with c3:
-        st.markdown('<div class="fun-card"><h4>SaaS</h4><p style="font-size:14px;">برمجيات جاهزة عبر الإنترنت.</p></div>', unsafe_allow_html=True)
+        st.markdown(
+            '<div class="fun-card"><h4>SaaS</h4><p>برمجيات كخدمة: تطبيقات جاهزة تُستخدم مباشرة عبر الإنترنت، مثل Google Docs.</p></div>',
+            unsafe_allow_html=True,
+        )
 
 # ===========================================================
 # تقنيات الذكاء الاصطناعي المتقدمة
@@ -402,9 +410,11 @@ elif page == "🤖 تقنيات الذكاء الاصطناعي المتقدمة
         """
         <div class="fun-card">
         <h3>من التعلم الآلي إلى التعلم العميق</h3>
-        <p style="font-size:15px; line-height:1.7;">
-        الذكاء الاصطناعي مجال واسع يندرج تحته "التعلم الآلي"، بينما يحاكي "التعلم العميق" بنية الخلايا
-        العصبية في الدماغ البشري عبر طبقات متعددة لمعالجة مهام معقدة.
+        <p style="font-size:15.5px; line-height:1.8;">
+        الذكاء الاصطناعي مجال واسع يندرج تحته "التعلم الآلي" (Machine Learning)، وهو تعليم الحاسوب
+        اكتشاف الأنماط من البيانات دون برمجته صراحة لكل حالة. أما "التعلم العميق" (Deep Learning)
+        فهو فرع متقدم يحاكي بنية الخلايا العصبية في الدماغ البشري عبر طبقات متعددة لمعالجة مهام
+        معقدة مثل التعرف على الصور والصوت.
         </p>
         </div>
         """,
@@ -417,18 +427,26 @@ elif page == "🤖 تقنيات الذكاء الاصطناعي المتقدمة
 elif page == "🔒 الأمن السيبراني والأخلاقيات":
     st.markdown('<div class="main-card"><h2>🔒 الأمن السيبراني وأخلاقيات التقنية</h2></div>', unsafe_allow_html=True)
 
-    st.markdown(
-        """
-        <div class="fun-card">
-        <h3>أبرز التهديدات وسبل الحماية</h3>
-        <p style="font-size:15px; line-height:1.7;">
-        يشمل الأمن السيبراني حماية الأنظمة والشبكات من الهجمات الرقمية كالتصيد الاحتيالي والبرمجيات الخبيثة،
-        مع الالتزام بالمعايير الأخلاقية للتعامل مع البيانات.
-        </p>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    st.markdown("### ⚠️ أبرز التهديدات السيبرانية")
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        st.markdown(
+            '<div class="fun-card"><h4>🎣 التصيّد الاحتيالي</h4>'
+            '<p>رسائل أو مواقع مزيفة تخدع المستخدم لسرقة بياناته أو كلمات مروره.</p></div>',
+            unsafe_allow_html=True,
+        )
+    with c2:
+        st.markdown(
+            '<div class="fun-card"><h4>🦠 البرمجيات الخبيثة</h4>'
+            '<p>برامج ضارة (فيروسات، برامج تجسس) تُصيب الأجهزة لسرقة البيانات أو تعطيلها.</p></div>',
+            unsafe_allow_html=True,
+        )
+    with c3:
+        st.markdown(
+            '<div class="fun-card"><h4>🔐 برمجيات الفدية</h4>'
+            '<p>تُشفّر بيانات الضحية وتطالب بفدية مالية مقابل فك التشفير.</p></div>',
+            unsafe_allow_html=True,
+        )
 
 # ===========================================================
 # مختبر الذكاء الاصطناعي
@@ -445,7 +463,7 @@ elif page == "🧪 مختبر الذكاء الاصطناعي":
 
     user_query = st.text_input(
         "📝 اكتب جملة أو استفسارًا تقنيًا وسيحاول المصنّف تخمين مجاله:",
-        placeholder="مثال: كيف يحمي جدار الحماية الشبكة؟",
+        placeholder="مثال: كيف يحمي جدار الحماية الشبكة من الاختراق؟",
         key="lab_query_input",
     )
 
@@ -468,7 +486,7 @@ elif page == "🧪 مختبر الذكاء الاصطناعي":
             confidence = int((scores[best_cat] / total_hits) * 100)
             st.markdown(
                 f'<div class="fun-card"><h3>التصنيف المقترح: {best_cat}</h3>'
-                f'<p>عدد الكلمات المفتاحية المطابقة: {scores[best_cat]}</p></div>',
+                f'<p>عدد الكلمات المفتاحية التي طابقت النص: {scores[best_cat]}</p></div>',
                 unsafe_allow_html=True,
             )
             st.progress(confidence, text=f"نسبة الثقة التقريبية: {confidence}%")

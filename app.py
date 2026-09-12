@@ -37,7 +37,7 @@ def get_image_base64(path):
 logo_base64 = get_image_base64("logo.jpg")
 
 # ---------------------------------------------------------
-# تنسيقات CSS: لوحة ألوان عصرية + هامش علوي كافٍ لمنع تداخل العنوان + دوران أفقي للشعار
+# تنسيقات CSS: إصلاح وضوح حقول الإدخال والنصوص المكتوبة فيها تماماً
 # ---------------------------------------------------------
 st.markdown(
     f"""
@@ -59,7 +59,7 @@ st.markdown(
         color: #eef2ff !important;
     }}
 
-    /* منع التمرير الأفقي على الجوال وضبط الهامش العلوي لمنع تداخل العنوان مع الشريط العلوي */
+    /* منع التمرير الأفقي على الجوال وضبط الهامش العلوي */
     html, body {{
         overflow-x: hidden !important;
     }}
@@ -178,12 +178,22 @@ st.markdown(
         font-size: clamp(13px, 2.2vw, 15px) !important;
     }}
 
+    /* ضمان وضوح حقل الإدخال والنص المكتوب بداخله بلون أبيض صريح وبارز */
     .stTextInput input {{
-        background-color: rgba(255,255,255,0.06) !important;
-        color: #eef2ff !important;
-        border: 1px solid rgba(34,211,238,0.5) !important;
-        border-radius: 10px !important;
+        background-color: rgba(15, 23, 42, 0.95) !important;
+        color: #ffffff !important;
+        -webkit-text-fill-color: #ffffff !important;
+        font-size: 16px !important;
+        font-weight: 700 !important;
+        border: 2px solid #22d3ee !important;
+        border-radius: 12px !important;
         text-align: right !important;
+        padding: 10px 14px !important;
+    }}
+    
+    .stTextInput label {{
+        color: #cbd5e1 !important;
+        font-weight: 600 !important;
     }}
 
     .stButton>button, .stFormSubmitButton>button {{

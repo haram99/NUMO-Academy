@@ -18,7 +18,7 @@ st.set_page_config(
     page_title="مستقبل التقنية والذكاء الاصطناعي 🚀",
     page_icon="🤖",
     layout="wide",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="collapsed",
 )
 
 # رابط Google Apps Script Web App المعتمد
@@ -44,41 +44,59 @@ st.markdown(
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&display=swap');
 
-    html, body, [class*="css"], .stMarkdown, p, span, label, div, h1, h2, h3, h4, h5, h6 {{
-        font-family: 'Tajawal', sans-serif !important;
-        direction: rtl !important;
-        text-align: right !important;
-    }}
+    /* =========================================================
+       BASE / DESKTOP
+       ========================================================= */
+    html, body, .stApp, [data-testid="stAppViewContainer"] {
+        max-width: 100%;
+        overflow-x: hidden !important;
+    }
 
-    .stApp {{
-        background: radial-gradient(circle at 15% 0%, #1b1035 0%, transparent 45%),
-                    radial-gradient(circle at 85% 15%, #072a3d 0%, transparent 50%),
-                    linear-gradient(160deg, #05060f 0%, #0b0f2e 45%, #150a30 100%);
+    body, .stApp, .stMarkdown, p, span, label,
+    h1, h2, h3, h4, h5, h6 {
+        font-family: 'Tajawal', sans-serif !important;
+    }
+
+    .stApp {
+        background:
+            radial-gradient(circle at 15% 0%, #1b1035 0%, transparent 45%),
+            radial-gradient(circle at 85% 15%, #072a3d 0%, transparent 50%),
+            linear-gradient(160deg, #05060f 0%, #0b0f2e 45%, #150a30 100%);
         background-attachment: fixed;
         color: #eef2ff !important;
-    }}
+    }
 
-    html, body {{
-        overflow-x: hidden !important;
-    }}
+    .block-container {
+        width: 100% !important;
+        max-width: 1400px !important;
+        box-sizing: border-box !important;
+        padding-top: 3rem !important;
+        padding-left: clamp(0.7rem, 3vw, 2rem) !important;
+        padding-right: clamp(0.7rem, 3vw, 2rem) !important;
+        padding-bottom: 2rem !important;
+        margin: auto !important;
+    }
 
-    .block-container {{
-        padding-top: 4.5rem !important;
-        padding-left: clamp(0.6rem, 3vw, 2rem) !important;
-        padding-right: clamp(0.6rem, 3vw, 2rem) !important;
-        max-width: 100% !important;
-    }}
+    /* Keep Arabic content RTL without forcing Streamlit's internal layout RTL. */
+    .main-card,
+    .fun-card,
+    .mobile-header,
+    .subtitle,
+    .title-glow {
+        direction: rtl !important;
+        text-align: right !important;
+    }
 
-    .sphere-logo-container {{
+    .sphere-logo-container {
         perspective: 1000px;
         display: flex;
         justify-content: center;
         align-items: center;
         margin: 10px 0;
         direction: ltr !important;
-    }}
+    }
 
-    .sphere-logo {{
+    .sphere-logo {
         width: 90px;
         height: 90px;
         border-radius: 50%;
@@ -90,15 +108,17 @@ st.markdown(
         box-shadow: 0 0 20px rgba(168, 85, 247, 0.4);
         animation: horizontalSpin 6s linear infinite;
         transform-style: preserve-3d;
-    }}
+    }
 
-    @keyframes horizontalSpin {{
-        0% {{ transform: rotateY(0deg); }}
-        100% {{ transform: rotateY(360deg); }}
-    }}
+    @keyframes horizontalSpin {
+        0% { transform: rotateY(0deg); }
+        100% { transform: rotateY(360deg); }
+    }
 
-    /* إصلاح البطاقات ومنع أي تداخل في النصوص على الجوال */
-    .main-card {{
+    .main-card {
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
         background: rgba(255, 255, 255, 0.05);
         backdrop-filter: blur(14px);
         -webkit-backdrop-filter: blur(14px);
@@ -109,11 +129,14 @@ st.markdown(
         margin-bottom: 15px;
         box-shadow: 0 8px 24px rgba(0,0,0,0.3);
         color: #eef2ff !important;
-        word-break: normal;
-        overflow-wrap: break-word;
-    }}
+        overflow: hidden;
+        overflow-wrap: anywhere;
+    }
 
-    .fun-card {{
+    .fun-card {
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
         background: rgba(255, 255, 255, 0.045);
         backdrop-filter: blur(10px);
         -webkit-backdrop-filter: blur(10px);
@@ -126,19 +149,27 @@ st.markdown(
         border-bottom: 1px solid rgba(255,255,255,0.06);
         border-left: 1px solid rgba(255,255,255,0.06);
         color: #eef2ff !important;
-        word-break: normal;
-        overflow-wrap: break-word;
-    }}
+        overflow: hidden;
+        overflow-wrap: anywhere;
+    }
 
-    .fun-card h3, .fun-card h4 {{
+    .fun-card h3, .fun-card h4 {
         background: linear-gradient(90deg, #22d3ee, #a855f7);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         display: block;
         margin-bottom: 6px;
-    }}
+        line-height: 1.5;
+    }
 
-    .badge {{
+    .main-card p, .fun-card p,
+    .main-card h1, .main-card h2, .main-card h3, .main-card h4,
+    .fun-card h1, .fun-card h2, .fun-card h3, .fun-card h4 {
+        overflow-wrap: anywhere;
+        word-break: normal;
+    }
+
+    .badge {
         display: inline-block;
         padding: 3px 10px;
         border-radius: 999px;
@@ -148,34 +179,39 @@ st.markdown(
         background: linear-gradient(90deg, rgba(34,211,238,0.18), rgba(168,85,247,0.18));
         border: 1px solid rgba(168,85,247,0.4);
         color: #c4b5fd !important;
-    }}
+    }
 
-    .title-glow {{
+    .title-glow {
         font-size: clamp(18px, 4.2vw, 32px);
         font-weight: 900;
         background: linear-gradient(90deg, #22d3ee, #a855f7, #f472b6);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
-        text-align: right;
         line-height: 1.4;
-    }}
+    }
 
-    .subtitle {{
-        text-align: right;
+    .subtitle {
         color: #94a3b8;
         font-size: clamp(11px, 2.2vw, 13px);
-    }}
+        line-height: 1.7;
+    }
 
-    hr {{
+    hr {
         border-color: rgba(255,255,255,0.08) !important;
-    }}
+        margin: 0.9rem 0 !important;
+    }
 
-    .stRadio label, .stRadio div, .stRadio p {{
+    .stRadio label, .stRadio p {
         color: #eef2ff !important;
         font-size: clamp(13px, 2.2vw, 15px) !important;
-    }}
+        line-height: 1.6 !important;
+    }
 
-    input[type="text"] {{
+    .stRadio > div {
+        gap: 6px;
+    }
+
+    input[type="text"] {
         background-color: #0b0f2e !important;
         color: #ffffff !important;
         -webkit-text-fill-color: #ffffff !important;
@@ -185,15 +221,16 @@ st.markdown(
         border-radius: 12px !important;
         text-align: right !important;
         padding: 10px 14px !important;
-    }}
-    
-    .stTextInput label {{
+        box-sizing: border-box !important;
+    }
+
+    .stTextInput label {
         color: #e2e8f0 !important;
         font-weight: 700 !important;
         font-size: 14px !important;
-    }}
+    }
 
-    .stButton>button, .stFormSubmitButton>button {{
+    .stButton > button, .stFormSubmitButton > button {
         background: linear-gradient(90deg, #0ea5e9, #a855f7);
         color: white;
         font-weight: 700;
@@ -205,32 +242,242 @@ st.markdown(
         transition: all 0.2s ease;
         width: 100%;
         min-height: 44px;
-    }}
-    .stButton>button:hover, .stFormSubmitButton>button:hover {{
+        white-space: normal !important;
+        line-height: 1.45 !important;
+    }
+
+    .stButton > button:hover, .stFormSubmitButton > button:hover {
         transform: translateY(-2px);
         box-shadow: 0 8px 20px rgba(34, 211, 238, 0.45);
         color: white !important;
-    }}
+    }
 
-    section[data-testid="stSidebar"] {{
+    section[data-testid="stSidebar"] {
         background: linear-gradient(180deg, #05060f, #150a30);
         border-left: 1px solid rgba(255,255,255,0.08);
-    }}
+    }
 
-    section[data-testid="stSidebar"] * {{
+    section[data-testid="stSidebar"] * {
         color: #eef2ff !important;
-    }}
+    }
 
-    .stRadio > div {{ gap: 6px; }}
+    img {
+        max-width: 100% !important;
+        height: auto;
+    }
 
-    /* تكديس الأعمدة بسلاسة تامة على الجوال دون أي تداخل */
-    @media (max-width: 768px) {{
-        div[data-testid="column"] {{
+    .mobile-header {
+        width: 100%;
+        box-sizing: border-box;
+        text-align: center !important;
+        padding: 5px 0 10px;
+    }
+
+    .mobile-header .title-glow,
+    .mobile-header .subtitle {
+        text-align: center !important;
+    }
+
+    .mobile-logo {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-bottom: 8px;
+    }
+
+    .mobile-logo img {
+        width: 55px !important;
+        height: 55px !important;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+
+    /* =========================================================
+       TABLET
+       ========================================================= */
+    @media (max-width: 900px) {
+        .block-container {
+            padding-left: 0.8rem !important;
+            padding-right: 0.8rem !important;
+        }
+
+        .main-card {
+            padding: 15px !important;
+        }
+
+        .fun-card {
+            padding: 13px !important;
+        }
+
+        .title-glow {
+            font-size: 24px !important;
+        }
+
+        .subtitle {
+            font-size: 12px !important;
+        }
+    }
+
+    /* =========================================================
+       MOBILE
+       ========================================================= */
+    @media (max-width: 768px) {
+        .block-container {
+            padding-top: 1.1rem !important;
+            padding-left: 0.6rem !important;
+            padding-right: 0.6rem !important;
+            padding-bottom: 1.4rem !important;
+        }
+
+        .main-card {
+            padding: 13px !important;
+            margin-top: 5px !important;
+            margin-bottom: 9px !important;
+            border-radius: 14px !important;
+        }
+
+        .fun-card {
+            padding: 11px !important;
+            margin: 7px 0 !important;
+            border-radius: 12px !important;
+        }
+
+        .title-glow {
+            font-size: 20px !important;
+            line-height: 1.45 !important;
+            text-align: center !important;
+        }
+
+        .subtitle {
+            font-size: 11px !important;
+            line-height: 1.65 !important;
+            text-align: center !important;
+        }
+
+        .main-card h1 {
+            font-size: 24px !important;
+            line-height: 1.4 !important;
+        }
+
+        .main-card h2 {
+            font-size: 18px !important;
+            line-height: 1.5 !important;
+        }
+
+        .fun-card h3 {
+            font-size: 17px !important;
+            line-height: 1.5 !important;
+        }
+
+        .fun-card h4 {
+            font-size: 15px !important;
+            line-height: 1.55 !important;
+        }
+
+        .main-card p,
+        .fun-card p {
+            font-size: 13px !important;
+            line-height: 1.8 !important;
+        }
+
+        /* Stack Streamlit columns vertically on phones. */
+        [data-testid="column"] {
             width: 100% !important;
+            min-width: 100% !important;
             flex: 1 1 100% !important;
-            margin-bottom: 10px;
-        }}
-    }}
+            margin-bottom: 5px !important;
+        }
+
+        [data-testid="stHorizontalBlock"] {
+            gap: 0.35rem !important;
+            flex-wrap: wrap !important;
+        }
+
+        .stButton > button,
+        .stFormSubmitButton > button {
+            width: 100% !important;
+            min-height: 48px !important;
+            padding: 10px 12px !important;
+            font-size: 13px !important;
+        }
+
+        .stRadio label {
+            font-size: 14px !important;
+            line-height: 1.65 !important;
+        }
+
+        .stRadio [role="radiogroup"] {
+            gap: 3px !important;
+        }
+
+        [data-testid="stForm"] {
+            width: 100% !important;
+            box-sizing: border-box !important;
+        }
+
+        [data-testid="stProgress"] {
+            width: 100% !important;
+        }
+
+        section[data-testid="stSidebar"] {
+            width: 85vw !important;
+            max-width: 320px !important;
+        }
+
+        .sphere-logo {
+            width: 58px !important;
+            height: 58px !important;
+        }
+
+        hr {
+            margin: 0.65rem 0 !important;
+        }
+    }
+
+    /* =========================================================
+       SMALL PHONES
+       ========================================================= */
+    @media (max-width: 480px) {
+        .block-container {
+            padding-left: 0.4rem !important;
+            padding-right: 0.4rem !important;
+        }
+
+        .main-card {
+            padding: 10px !important;
+        }
+
+        .fun-card {
+            padding: 9px !important;
+        }
+
+        .title-glow {
+            font-size: 18px !important;
+        }
+
+        .subtitle {
+            font-size: 10.5px !important;
+        }
+
+        .main-card h2 {
+            font-size: 17px !important;
+        }
+
+        .fun-card h3 {
+            font-size: 16px !important;
+        }
+
+        .fun-card p,
+        .main-card p {
+            font-size: 12.5px !important;
+            line-height: 1.75 !important;
+        }
+
+        .stButton > button,
+        .stFormSubmitButton > button {
+            font-size: 12.5px !important;
+        }
+    }
     </style>
     """,
     unsafe_allow_html=True,
@@ -281,27 +528,22 @@ with st.sidebar:
     )
 
 # ---------------------------------------------------------
-# رأس الصفحة
+# رأس الصفحة — تصميم Responsive للجوال والكمبيوتر
 # ---------------------------------------------------------
-col1, col2 = st.columns([4, 1])
-with col2:
-    if logo_base64:
-        st.markdown(
-            f"""
-            <div class="sphere-logo-container" style="margin:0;">
-                <img src="data:image/jpeg;base64,{logo_base64}" class="sphere-logo" style="width:50px; height:50px;">
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-    else:
-        st.image("logo.jpg", width=50)
-with col1:
-    st.markdown('<div class="title-glow">منصة الابتكار الرقمي والذكاء الاصطناعي</div>', unsafe_allow_html=True)
-    st.markdown(
-        "<p class='subtitle'>برنامج إثراء مهارات المستقبل للمرحلة الثانوية — أكاديمية نمو العالي</p>",
-        unsafe_allow_html=True,
-    )
+st.markdown(
+    f"""
+    <div class="mobile-header">
+        <div class="mobile-logo">
+            <img src="data:image/jpeg;base64,{logo_base64}" alt="شعار أكاديمية نمو العالي">
+        </div>
+        <div class="title-glow">منصة الابتكار الرقمي والذكاء الاصطناعي</div>
+        <div class="subtitle">
+            برنامج إثراء مهارات المستقبل للمرحلة الثانوية — أكاديمية نمو العالي
+        </div>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
 
 st.markdown("---")
 
@@ -488,7 +730,11 @@ elif page == "🎯 التحدي التقني والمسابقة":
     with st.form("competition_form"):
         st.markdown("### بيانات المتسابق:")
         participant_name = st.text_input("👤 الاسم الكامل:", key="comp_name")
-        participant_phone = st.text_input("📱 رقم الجوال (مثال: 05XXXXXXXX):", key="comp_phone")
+        participant_phone = st.text_input(
+        "📱 رقم الجوال (مثال: 05XXXXXXXX):",
+        key="comp_phone",
+        max_chars=15,
+    )
 
         st.markdown("---")
         st.markdown("### أسئلة التحدي:")

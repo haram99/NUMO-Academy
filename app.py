@@ -37,7 +37,7 @@ def get_image_base64(path):
 logo_base64 = get_image_base64("logo.jpg")
 
 # ---------------------------------------------------------
-# تنسيقات CSS: إصلاح وضوح حقول الإدخال والنصوص المكتوبة فيها تماماً
+# تنسيقات CSS: ضمان وضوح النصوص داخل حقول الإدخال واستجابة الموبايل
 # ---------------------------------------------------------
 st.markdown(
     f"""
@@ -50,7 +50,6 @@ st.markdown(
         text-align: right !important;
     }}
 
-    /* خلفية عصرية داكنة بتدرج شفقي (Aurora) */
     .stApp {{
         background: radial-gradient(circle at 15% 0%, #1b1035 0%, transparent 45%),
                     radial-gradient(circle at 85% 15%, #072a3d 0%, transparent 50%),
@@ -59,7 +58,6 @@ st.markdown(
         color: #eef2ff !important;
     }}
 
-    /* منع التمرير الأفقي على الجوال وضبط الهامش العلوي */
     html, body {{
         overflow-x: hidden !important;
     }}
@@ -71,7 +69,6 @@ st.markdown(
         max-width: 100% !important;
     }}
 
-    /* الشعار المجسم مع دوران أفقي سلس حول المحور Y */
     .sphere-logo-container {{
         perspective: 1000px;
         display: flex;
@@ -103,7 +100,6 @@ st.markdown(
         .sphere-logo {{ width: 76px; height: 76px; }}
     }}
 
-    /* بطاقات زجاجية عصرية */
     .main-card {{
         background: rgba(255, 255, 255, 0.05);
         backdrop-filter: blur(14px);
@@ -178,9 +174,9 @@ st.markdown(
         font-size: clamp(13px, 2.2vw, 15px) !important;
     }}
 
-    /* ضمان وضوح حقل الإدخال والنص المكتوب بداخله بلون أبيض صريح وبارز */
-    .stTextInput input {{
-        background-color: rgba(15, 23, 42, 0.95) !important;
+    /* إصلاح شامل لمربعات النصوص (الاسم ورقم الجوال) وتأكيد ظهور الكتابة بلون أبيض صريح */
+    input[type="text"] {{
+        background-color: #0b0f2e !important;
         color: #ffffff !important;
         -webkit-text-fill-color: #ffffff !important;
         font-size: 16px !important;
@@ -192,8 +188,9 @@ st.markdown(
     }}
     
     .stTextInput label {{
-        color: #cbd5e1 !important;
-        font-weight: 600 !important;
+        color: #e2e8f0 !important;
+        font-weight: 700 !important;
+        font-size: 15px !important;
     }}
 
     .stButton>button, .stFormSubmitButton>button {{

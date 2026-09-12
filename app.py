@@ -23,7 +23,7 @@ st.set_page_config(
 )
 
 # رابط Google Apps Script Web App (ضع رابطك هنا)
-GOOGLE_SHEET_WEB_APP_URL = "ضع_رابط_ويب_جوجل_هنا"
+GOOGLE_SHEET_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzmib9hadMZDIK70vxzb9HlNFTnL6jS4KZgp_b0CuPWJ4-kIQ-KKxJc-Sg-buL1MA_z/exec"
 
 # دالة لتحويل الشعار إلى Base64
 def get_image_base64(path):

@@ -1,739 +1,428 @@
 # -*- coding: utf-8 -*-
 """
-منصة تفاعلية متقدمة عن التقنية والذكاء الاصطناعي للمرحلة الثانوية
-أكاديمية نمو العالي للتدريب - Numo Academy
-تشغيل: streamlit run app.py
+رحلة الذكاء الاصطناعي — أكاديمية نمو (نسخة Streamlit)
+- تسجيل اسم الطالبة ورقم الجوال (0500000000)
+- ثلاثة مستويات: أسئلة، تدريب آلة (KNN)، اكتشاف التحيّز
+- حفظ بيانات اللاعبات ونتائجهن في ملف Excel (players.xlsx)
+- لوحة مشرف محمية بكلمة مرور لتنزيل الملف
+
+التشغيل محليًا:  streamlit run app.py
 """
-
-import streamlit as st
-import time
+import hmac
+import math
+import os
+import re
+import threading
+import uuid
 from datetime import datetime
-import base64
-import requests
+from pathlib import Path
 
-# ---------------------------------------------------------
-# إعدادات الصفحة العامة
-# ---------------------------------------------------------
+import altair as alt
+import pandas as pd
+import streamlit as st
+from openpyxl import Workbook, load_workbook
+from openpyxl.styles import Alignment, Font, PatternFill
+from PIL import Image
+
+BASE = Path(__file__).parent
+LOGO = BASE / "logo.jpg"
+DATA_FILE = Path(os.environ.get("PLAYERS_XLSX", BASE / "players.xlsx"))
+
+AR_DIGITS = str.maketrans("٠١٢٣٤٥٦٧٨٩۰۱۲۳۴۵۶۷۸۹", "0123456789" * 2)
+
 st.set_page_config(
-    page_title="مستقبل التقنية والذكاء الاصطناعي 🚀",
-    page_icon="🤖",
-    layout="wide",
-    initial_sidebar_state="expanded",
+    page_title="رحلة الذكاء الاصطناعي | أكاديمية نمو",
+    page_icon=Image.open(LOGO) if LOGO.exists() else "🤖",
+    layout="centered",
 )
 
-# رابط Google Apps Script Web App المعتمد
-GOOGLE_SHEET_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzmib9hadMZDIK70vxzb9HlNFTnL6jS4KZgp_b0CuPWJ4-kIQ-KKxJc-Sg-buL1MA_z/exec"
-
-
-def get_image_base64(path):
-    try:
-        with open(path, "rb") as f:
-            data = f.read()
-        return base64.b64encode(data).decode("utf-8")
-    except Exception:
-        return ""
-
-
-logo_base64 = get_image_base64("logo.jpg")
-
-# ---------------------------------------------------------
-# تنسيقات CSS: إصلاح انعكاس الشعار، منع تداخل الأيقونات، وضبط الجوال
-# ---------------------------------------------------------
-st.markdown(
-    f"""
-    <style>
-    @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&display=swap');
-
-    html, body, [class*="css"], .stMarkdown, p, span, label, div, h1, h2, h3, h4, h5, h6 {{
-        font-family: 'Tajawal', sans-serif !important;
-        direction: rtl !important;
-        text-align: right !important;
-    }}
-
-    .stApp {{
-        background: radial-gradient(circle at 15% 0%, #1b1035 0%, transparent 45%),
-                    radial-gradient(circle at 85% 15%, #072a3d 0%, transparent 50%),
-                    linear-gradient(160deg, #05060f 0%, #0b0f2e 45%, #150a30 100%);
-        background-attachment: fixed;
-        color: #eef2ff !important;
-    }}
-
-    html, body {{
-        overflow-x: hidden !important;
-    }}
-
-    .block-container {{
-        padding-top: 4.5rem !important;
-        padding-left: clamp(0.6rem, 3vw, 2rem) !important;
-        padding-right: clamp(0.6rem, 3vw, 2rem) !important;
-        max-width: 100% !important;
-    }}
-
-    /* حاوية الشعار مع إزالة أي انعكاس مرآتي ودوران أفقي سليم */
-    .sphere-logo-container {{
-        perspective: 1000px;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        margin: 10px 0;
-        direction: ltr !important; /* ضمان عدم انعكاس عناصر الشعار الداخلية */
-    }}
-
-    .sphere-logo {{
-        width: 100px;
-        height: 100px;
-        border-radius: 50%;
-        object-fit: cover;
-        border: 3px solid transparent;
-        background:
-            linear-gradient(#0b0f2e, #0b0f2e) padding-box,
-            linear-gradient(135deg, #22d3ee, #a855f7, #f472b6) border-box;
-        box-shadow: 0 0 24px rgba(168, 85, 247, 0.45), 0 0 10px rgba(34, 211, 238, 0.35);
-        animation: horizontalSpin 6s linear infinite;
-        transform-style: preserve-3d;
-    }}
-
-    @keyframes horizontalSpin {{
-        0% {{ transform: rotateY(0deg); }}
-        100% {{ transform: rotateY(360deg); }}
-    }}
-
-    @media (max-width: 640px) {{
-        .sphere-logo {{ width: 76px; height: 76px; }}
-    }}
-
-    .main-card {{
-        background: rgba(255, 255, 255, 0.05);
-        backdrop-filter: blur(14px);
-        -webkit-backdrop-filter: blur(14px);
-        border: 1px solid rgba(255, 255, 255, 0.10);
-        border-radius: 20px;
-        padding: clamp(16px, 3vw, 26px);
-        margin-top: 8px;
-        margin-bottom: 20px;
-        box-shadow: 0 8px 32px rgba(0,0,0,0.35);
-        color: #eef2ff !important;
-        word-break: break-word;
-    }}
-
-    .fun-card {{
-        background: rgba(255, 255, 255, 0.045);
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
-        border-radius: 16px;
-        padding: clamp(14px, 2.5vw, 20px);
-        margin: 10px 0;
-        box-shadow: 0 6px 20px rgba(0,0,0,0.28);
-        border-right: 5px solid #22d3ee;
-        border-top: 1px solid rgba(255,255,255,0.06);
-        border-bottom: 1px solid rgba(255,255,255,0.06);
-        border-left: 1px solid rgba(255,255,255,0.06);
-        color: #eef2ff !important;
-        word-break: break-word;
-    }}
-
-    .fun-card h3, .fun-card h4 {{
-        background: linear-gradient(90deg, #22d3ee, #a855f7);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        display: inline-block;
-    }}
-
-    .badge {{
-        display: inline-block;
-        padding: 3px 12px;
-        border-radius: 999px;
-        font-size: 12px;
-        font-weight: 700;
-        margin-bottom: 8px;
-        background: linear-gradient(90deg, rgba(34,211,238,0.18), rgba(168,85,247,0.18));
-        border: 1px solid rgba(168,85,247,0.4);
-        color: #c4b5fd !important;
-    }}
-
-    .title-glow {{
-        font-size: clamp(20px, 4.6vw, 36px);
-        font-weight: 900;
-        background: linear-gradient(90deg, #22d3ee, #a855f7, #f472b6);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        text-align: right;
-        line-height: 1.35;
-    }}
-
-    .subtitle {{
-        text-align: right;
-        color: #94a3b8;
-        font-size: clamp(12px, 2.4vw, 14px);
-    }}
-
-    hr {{
-        border-color: rgba(255,255,255,0.08) !important;
-    }}
-
-    .stRadio label, .stRadio div, .stRadio p {{
-        color: #eef2ff !important;
-        font-size: clamp(13px, 2.2vw, 15px) !important;
-    }}
-
-    input[type="text"] {{
-        background-color: #0b0f2e !important;
-        color: #ffffff !important;
-        -webkit-text-fill-color: #ffffff !important;
-        font-size: 16px !important;
-        font-weight: 700 !important;
-        border: 2px solid #22d3ee !important;
-        border-radius: 12px !important;
-        text-align: right !important;
-        padding: 10px 14px !important;
-    }}
-    
-    .stTextInput label {{
-        color: #e2e8f0 !important;
-        font-weight: 700 !important;
-        font-size: 15px !important;
-    }}
-
-    .stButton>button, .stFormSubmitButton>button {{
-        background: linear-gradient(90deg, #0ea5e9, #a855f7);
-        color: white;
-        font-weight: 700;
-        font-size: clamp(14px, 2.4vw, 16px);
-        border-radius: 12px;
-        padding: 12px 24px;
-        border: none;
-        box-shadow: 0 4px 16px rgba(168, 85, 247, 0.35);
-        transition: all 0.2s ease;
-        width: 100%;
-        min-height: 46px;
-    }}
-    .stButton>button:hover, .stFormSubmitButton>button:hover {{
-        transform: translateY(-2px);
-        box-shadow: 0 8px 20px rgba(34, 211, 238, 0.45);
-        color: white !important;
-    }}
-
-    section[data-testid="stSidebar"] {{
-        background: linear-gradient(180deg, #05060f, #150a30);
-        border-left: 1px solid rgba(255,255,255,0.08);
-    }}
-
-    section[data-testid="stSidebar"] * {{
-        color: #eef2ff !important;
-    }}
-
-    .stRadio > div {{ gap: 6px; }}
-
-    @media (max-width: 640px) {{
-        div[data-testid="column"] {{
-            width: 100% !important;
-            flex: 1 1 100% !important;
-        }}
-    }}
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
-
-# ---------------------------------------------------------
-# الشريط الجانبي
-# ---------------------------------------------------------
-with st.sidebar:
-    if logo_base64:
-        st.markdown(
-            f"""
-            <div class="sphere-logo-container">
-                <img src="data:image/jpeg;base64,{logo_base64}" class="sphere-logo">
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-    else:
-        st.image("logo.jpg", use_container_width=True)
-
-    st.markdown(
-        "<h3 style='text-align:center; background:linear-gradient(90deg,#22d3ee,#a855f7);"
-        "-webkit-background-clip:text; -webkit-text-fill-color:transparent; margin-top:5px;'>"
-        "أكاديمية نمو العالي</h3>",
-        unsafe_allow_html=True,
-    )
-    st.markdown("---")
-    st.markdown("### 🧭 أقسام المنصة")
-
-    page = st.radio(
-        "اختر القسم التعليمي:",
-        [
-            "🏠 الرئيسية",
-            "💡 أساسيات التحول الرقمي",
-            "🤖 تقنيات الذكاء الاصطناعي المتقدمة",
-            "🔒 الأمن السيبراني والأخلاقيات",
-            "🧪 مختبر الذكاء الاصطناعي",
-            "🎯 التحدي التقني والمسابقة",
-        ],
-        key="main_navigation",
-    )
-
-    st.markdown("---")
-    st.markdown(
-        "<p style='text-align:center; font-size:12px; color:#94a3b8;'>مخصص لطلبة المرحلة الثانوية 🎓</p>",
-        unsafe_allow_html=True,
-    )
-
-# ---------------------------------------------------------
-# رأس الصفحة
-# ---------------------------------------------------------
-col1, col2 = st.columns([4, 1])
-with col2:
-    if logo_base64:
-        st.markdown(
-            f"""
-            <div class="sphere-logo-container" style="margin:0;">
-                <img src="data:image/jpeg;base64,{logo_base64}" class="sphere-logo" style="width:64px; height:64px;">
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-    else:
-        st.image("logo.jpg", width=64)
-with col1:
-    st.markdown('<div class="title-glow">منصة الابتكار الرقمي والذكاء الاصطناعي</div>', unsafe_allow_html=True)
-    st.markdown(
-        "<p class='subtitle'>برنامج إثراء مهارات المستقبل للمرحلة الثانوية — أكاديمية نمو العالي</p>",
-        unsafe_allow_html=True,
-    )
-
-st.markdown("---")
-
-# ---------------------------------------------------------
-# تهيئة حالة الجلسة
-# ---------------------------------------------------------
-if "lab_history" not in st.session_state:
-    st.session_state.lab_history = []
-
-# ===========================================================
-# الرئيسية
-# ===========================================================
-if page == "🏠 الرئيسية":
-    st.markdown(
-        """
-        <div class="main-card" style="text-align:center;">
-        <span class="badge">بوابة التعلّم الرقمي</span>
-        <h2>مرحبًا بك في بوابة مهندسي وقادة المستقبل الرقمي! 🚀</h2>
-        <p style="font-size:16px; color:#cbd5e1; line-height:1.8;">
-        نعيش اليوم ثورة تكنولوجية غير مسبوقة يقودها الذكاء الاصطناعي، الحوسبة السحابية، وتحليل البيانات الضخمة.
-        هذه المنصة صُممت خصيصًا لتزويدك بالمفاهيم الأساسية والمتقدمة اللازمة لمواكبة متطلبات سوق العمل الرقمي الحديث،
-        وتأهيلك لاختيار تخصصات جامعية ومسارات مهنية واعدة في هذا المجال.
-        </p>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    c1, c2, c3 = st.columns(3)
-    with c1:
-        st.markdown(
-            '<div class="fun-card"><h3>🌐 التحول الرقمي</h3>'
-            '<p>البنى التحتية، إنترنت الأشياء (IoT)، والحوسبة السحابية بأنواعها الثلاثة.</p></div>',
-            unsafe_allow_html=True,
-        )
-    with c2:
-        st.markdown(
-            '<div class="fun-card"><h3>🧠 نماذج الذكاء</h3>'
-            '<p>التعلم الآلي، الشبكات العصبية، معالجة اللغة الطبيعية، والنماذج التوليدية.</p></div>',
-            unsafe_allow_html=True,
-        )
-    with c3:
-        st.markdown(
-            '<div class="fun-card"><h3>🛡️ أمن المعلومات</h3>'
-            '<p>التهديدات السيبرانية الشائعة، وأخلاقيات استخدام خوارزميات الذكاء الاصطناعي.</p></div>',
-            unsafe_allow_html=True,
-        )
-
-    st.markdown(
-        """
-        <div class="fun-card">
-        <h4>📌 لماذا تهمك هذه المهارات؟</h4>
-        <p style="line-height:1.8; font-size:15.5px;">
-        وفقًا لتقارير المنتدى الاقتصادي العالمي، فإن مهارات التفكير التحليلي، التعامل مع الذكاء الاصطناعي والبيانات الضخمة،
-        والوعي بالأمن السيبراني هي من بين أكثر المهارات طلبًا في سوق العمل حتى نهاية هذا العقد. البدء المبكر في فهم
-        هذه المفاهيم يمنحك أفضلية حقيقية في مسارك الجامعي والمهني القادم.
-        </p>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-# ===========================================================
-# أساسيات التحول الرقمي
-# ===========================================================
-elif page == "💡 أساسيات التحول الرقمي":
-    st.markdown('<div class="main-card"><h2>💡 أساسيات التحول الرقمي والتقنيات الناشئة</h2></div>', unsafe_allow_html=True)
-
-    st.markdown(
-        """
-        <div class="fun-card">
-        <h3>ما هو التحول الرقمي؟</h3>
-        <p style="font-size:15.5px; line-height:1.8;">
-        التحول الرقمي ليس مجرد استخدام أجهزة حاسوب، بل هو إعادة هندسة شاملة للعمليات والخدمات
-        باستخدام التقنية لرفع الكفاءة، وتحسين تجربة المستخدم، واتخاذ قرارات مبنية على البيانات
-        بدلًا من التخمين.
-        </p>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    st.markdown("### ☁️ أنواع الحوسبة السحابية")
-    c1, c2, c3 = st.columns(3)
-    with c1:
-        st.markdown(
-            '<div class="fun-card"><h4>IaaS</h4><p>بنية تحتية كخدمة: خوادم وتخزين افتراضي جاهز للاستخدام، مثل AWS EC2.</p></div>',
-            unsafe_allow_html=True,
-        )
-    with c2:
-        st.markdown(
-            '<div class="fun-card"><h4>PaaS</h4><p>منصة كخدمة: بيئة جاهزة لبناء وتشغيل التطبيقات دون القلق بشأن الخوادم.</p></div>',
-            unsafe_allow_html=True,
-        )
-    with c3:
-        st.markdown(
-            '<div class="fun-card"><h4>SaaS</h4><p>برمجيات كخدمة: تطبيقات جاهزة تُستخدم مباشرة عبر الإنترنت، مثل Google Docs.</p></div>',
-            unsafe_allow_html=True,
-        )
-
-    st.markdown(
-        """
-        <div class="fun-card">
-        <h3>🔗 إنترنت الأشياء (IoT)</h3>
-        <p style="font-size:15.5px; line-height:1.8;">
-        هو شبكة من الأجهزة المادية (حساسات، ساعات ذكية، سيارات، أجهزة منزلية) المتصلة بالإنترنت
-        والقادرة على جمع البيانات وتبادلها واتخاذ إجراءات دون تدخل بشري مباشر، وهو ما يقوم عليه
-        مفهوم "المدن الذكية" و"المصانع الذكية".
-        </p>
-        </div>
-        <div class="fun-card">
-        <h3>📊 البيانات الضخمة (Big Data)</h3>
-        <p style="font-size:15.5px; line-height:1.8;">
-        تُوصف عادة بخصائص الـ 5V: الحجم (Volume)، السرعة (Velocity)، التنوع (Variety)،
-        الصدقية (Veracity)، والقيمة (Value). الشركات تستخدم هذه البيانات لفهم سلوك العملاء
-        وتحسين قراراتها.
-        </p>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-# ===========================================================
-# تقنيات الذكاء الاصطناعي المتقدمة
-# ===========================================================
-elif page == "🤖 تقنيات الذكاء الاصطناعي المتقدمة":
-    st.markdown('<div class="main-card"><h2>🤖 عمق خوارزميات الذكاء الاصطناعي</h2></div>', unsafe_allow_html=True)
-
-    st.markdown(
-        """
-        <div class="fun-card">
-        <h3>من التعلم الآلي إلى التعلم العميق</h3>
-        <p style="font-size:15.5px; line-height:1.8;">
-        الذكاء الاصطناعي مجال واسع يندرج تحته "التعلم الآلي" (Machine Learning)، وهو تعليم الحاسوب
-        اكتشاف الأنماط من البيانات دون برمجته صراحة لكل حالة. أما "التعلم العميق" (Deep Learning)
-        فهو فرع متقدم يحاكي بنية الخلايا العصبية في الدماغ البشري عبر طبقات متعددة لمعالجة مهام
-        معقدة مثل التعرف على الصور والصوت.
-        </p>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    st.markdown("### 🧩 أنواع التعلم الآلي الثلاثة")
-    c1, c2, c3 = st.columns(3)
-    with c1:
-        st.markdown(
-            '<div class="fun-card"><h4>👨‍🏫 تعلم موجَّه</h4>'
-            '<p>يتعلم النموذج من بيانات مُصنَّفة مسبقًا (سؤال وجواب)، مثل تصنيف البريد كمزعج أو غير مزعج.</p></div>',
-            unsafe_allow_html=True,
-        )
-    with c2:
-        st.markdown(
-            '<div class="fun-card"><h4>🔍 تعلم غير موجَّه</h4>'
-            '<p>يكتشف النموذج الأنماط والتجمعات بنفسه دون تصنيفات جاهزة، مثل تجميع العملاء حسب سلوك الشراء.</p></div>',
-            unsafe_allow_html=True,
-        )
-    with c3:
-        st.markdown(
-            '<div class="fun-card"><h4>🎮 تعلم تعزيزي</h4>'
-            '<p>يتعلم النموذج بالمحاولة والخطأ عبر مكافآت وعقوبات، كما في الروبوتات وألعاب الفيديو الذكية.</p></div>',
-            unsafe_allow_html=True,
-        )
-
-    st.markdown(
-        """
-        <div class="fun-card">
-        <h3>💬 معالجة اللغة الطبيعية (NLP) والنماذج التوليدية</h3>
-        <p style="font-size:15.5px; line-height:1.8;">
-        هي الفرع الذي يمكّن الحاسوب من فهم وتوليد اللغة البشرية، وهي الأساس الذي تقوم عليه
-        النماذج اللغوية الكبيرة (LLMs) مثل الشات بوت الحديثة، التي تولّد نصوصًا وصورًا بناءً على
-        احتمالات إحصائية متعلَّمة من كميات هائلة من النصوص، لا عبر "فهم" حقيقي كما لدى الإنسان.
-        </p>
-        </div>
-        <div class="fun-card">
-        <h3>👁️ رؤية الحاسوب (Computer Vision)</h3>
-        <p style="font-size:15.5px; line-height:1.8;">
-        تقنية تمكّن الأنظمة من "رؤية" وتحليل الصور والفيديو، وتُستخدم في التعرف على الوجوه،
-        السيارات ذاتية القيادة، وتحليل الصور الطبية لمساعدة الأطباء على تشخيص أدق وأسرع.
-        </p>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-# ===========================================================
-# الأمن السيبراني والأخلاقيات
-# ===========================================================
-elif page == "🔒 الأمن السيبراني والأخلاقيات":
-    st.markdown('<div class="main-card"><h2>🔒 الأمن السيبراني وأخلاقيات التقنية</h2></div>', unsafe_allow_html=True)
-
-    st.markdown("### ⚠️ أبرز التهديدات السيبرانية")
-    c1, c2, c3 = st.columns(3)
-    with c1:
-        st.markdown(
-            '<div class="fun-card"><h4>🎣 التصيّد الاحتيالي</h4>'
-            '<p>رسائل أو مواقع مزيفة تخدع المستخدم لسرقة بياناته أو كلمات مروره.</p></div>',
-            unsafe_allow_html=True,
-        )
-    with c2:
-        st.markdown(
-            '<div class="fun-card"><h4>🦠 البرمجيات الخبيثة</h4>'
-            '<p>برامج ضارة (فيروسات، برامج تجسس) تُصيب الأجهزة لسرقة البيانات أو تعطيلها.</p></div>',
-            unsafe_allow_html=True,
-        )
-    with c3:
-        st.markdown(
-            '<div class="fun-card"><h4>🔐 برمجيات الفدية</h4>'
-            '<p>تُشفّر بيانات الضحية وتطالب بفدية مالية مقابل فك التشفير.</p></div>',
-            unsafe_allow_html=True,
-        )
-
-    st.markdown(
-        """
-        <div class="fun-card">
-        <h3>🛡️ خطوط الدفاع الأساسية</h3>
-        <p style="font-size:15.5px; line-height:1.8;">
-        تفعيل المصادقة الثنائية (2FA)، استخدام كلمات مرور قوية وفريدة لكل حساب، تحديث الأنظمة
-        والتطبيقات دوريًا لسد الثغرات الأمنية، وعدم النقر على روابط أو مرفقات من مصادر غير موثوقة.
-        </p>
-        </div>
-        <div class="fun-card">
-        <h3>⚖️ أخلاقيات الذكاء الاصطناعي</h3>
-        <p style="font-size:15.5px; line-height:1.8;">
-        من أبرز القضايا الأخلاقية: <b>التحيّز الخوارزمي</b> (عندما تتعلم النماذج تحيزات موجودة في
-        بيانات التدريب)، <b>خصوصية البيانات</b> (كيف تُجمع بيانات المستخدمين وتُستخدم)،
-        و<b>التزييف العميق (Deepfake)</b> الذي يُستخدم لإنشاء صور أو مقاطع فيديو مزيفة تبدو حقيقية،
-        مما يستدعي وعيًا نقديًا عند التعامل مع أي محتوى رقمي.
-        </p>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-# ===========================================================
-# مختبر الذكاء الاصطناعي
-# ===========================================================
-elif page == "🧪 مختبر الذكاء الاصطناعي":
-    st.markdown('<div class="main-card"><h2>🧪 محاكي تصنيف النصوص بالكلمات المفتاحية</h2></div>', unsafe_allow_html=True)
-
-    st.markdown(
-        """
-        <div class="fun-card">
-        <p style="font-size:15px; line-height:1.8;">
-        هذا المختبر يحاكي بشكل مبسّط الخطوة الأولى التي تقوم بها كثير من أنظمة تصنيف النصوص:
-        البحث عن كلمات مفتاحية دالة لتحديد التصنيف الأنسب. الأنظمة الحقيقية (مثل نماذج NLP) تستخدم
-        بدلًا من ذلك تمثيلات رياضية معقدة للكلمات (Embeddings)، لكن الفكرة الأساسية للتصنيف متشابهة.
-        </p>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    categories = {
-        "الذكاء الاصطناعي": ["ذكاء", "تعلم", "خوارزمية", "نموذج", "شبكة عصبية", "روبوت"],
-        "الأمن السيبراني": ["اختراق", "تصيد", "فيروس", "كلمة مرور", "حماية", "فدية"],
-        "الحوسبة السحابية": ["سحابة", "خادم", "تخزين", "iaas", "paas", "saas"],
-        "إنترنت الأشياء": ["حساس", "جهاز ذكي", "استشعار", "iot", "منزل ذكي"],
-    }
-
-    user_query = st.text_input(
-        "📝 اكتب جملة أو استفسارًا تقنيًا وسيحاول المصنّف تخمين مجاله:",
-        placeholder="مثال: كيف يحمي جدار الحماية الشبكة من الاختراق؟",
-        key="lab_query_input",
-    )
-
-    if user_query:
-        with st.spinner("🔄 جاري تحليل النص..."):
-            time.sleep(0.8)
-
-        text = user_query.lower()
-        scores = {cat: sum(1 for kw in kws if kw in text) for cat, kws in categories.items()}
-        best_cat = max(scores, key=scores.get)
-        total_hits = sum(scores.values())
-
-        if total_hits == 0:
-            st.markdown(
-                '<div class="fun-card"><h3>النتيجة</h3>'
-                '<p>لم يتعرف المصنّف على كلمات مفتاحية واضحة. جرّب إضافة مصطلحات تقنية أكثر تحديدًا.</p></div>',
-                unsafe_allow_html=True,
-            )
-        else:
-            confidence = int((scores[best_cat] / total_hits) * 100)
-            st.markdown(
-                f'<div class="fun-card"><h3>التصنيف المقترح: {best_cat}</h3>'
-                f'<p>عدد الكلمات المفتاحية التي طابقت النص: {scores[best_cat]}</p></div>',
-                unsafe_allow_html=True,
-            )
-            st.progress(confidence, text=f"نسبة الثقة التقريبية: {confidence}%")
-            st.session_state.lab_history.append((user_query, best_cat))
-
-    if st.session_state.lab_history:
-        st.markdown("### 🕓 سجلّ المحاولات الأخيرة")
-        for q, cat in reversed(st.session_state.lab_history[-5:]):
-            st.markdown(f'<div class="fun-card">📝 "{q}" ← <b>{cat}</b></div>', unsafe_allow_html=True)
-
-# ===========================================================
-# التحدي التقني والمسابقة
-# ===========================================================
-elif page == "🎯 التحدي التقني والمسابقة":
-    st.markdown('<div class="main-card"><h2>🎯 التحدي التقني النهائي (اختبر معلوماتك وسجل بالمسابقة)</h2></div>', unsafe_allow_html=True)
-
-    with st.form("competition_form"):
-        st.markdown("### بيانات المتسابق:")
-        participant_name = st.text_input("👤 الاسم الكامل:", key="comp_name")
-        participant_phone = st.text_input("📱 رقم الجوال (مثال: 05XXXXXXXX):", key="comp_phone")
-
-        st.markdown("---")
-        st.markdown("### أسئلة التحدي:")
-
-        questions = [
-            {
-                "q": "1. مؤسسة تريد تحليل سلوك آلاف العملاء دون امتلاك تصنيفات جاهزة لبياناتهم، فما نوع التعلم الآلي الأنسب؟",
-                "options": [
-                    "تعلم موجَّه (Supervised Learning)",
-                    "تعلم غير موجَّه (Unsupervised Learning)",
-                    "تعلم تعزيزي (Reinforcement Learning)",
-                ],
-                "answer": "تعلم غير موجَّه (Unsupervised Learning)",
-                "explain": "التعلم غير الموجَّه مناسب هنا لأنه يكتشف الأنماط والتجمعات في البيانات دون الحاجة لتصنيفات مسبقة.",
-            },
-            {
-                "q": "2. شركة ناشئة تريد إطلاق تطبيق بسرعة دون بناء أو إدارة خوادمها الخاصة، ما نوع الخدمة السحابية الأنسب؟",
-                "options": ["IaaS", "PaaS", "SaaS"],
-                "answer": "PaaS",
-                "explain": "منصة كخدمة (PaaS) توفر بيئة جاهزة لتطوير ونشر التطبيقات دون القلق بشأن إدارة البنية التحتية.",
-            },
-            {
-                "q": "3. تلقيت رسالة بريد إلكتروني تطلب تحديث كلمة مرور حسابك البنكي عبر رابط غريب، ما نوع الهجوم الأرجح؟",
-                "options": ["برمجية فدية", "تصيّد احتيالي (Phishing)", "هجوم حجب خدمة"],
-                "answer": "تصيّد احتيالي (Phishing)",
-                "explain": "هذا النمط الكلاسيكي من التصيّد الاحتيالي يعتمد على خداع الضحية لإدخال بياناته في موقع مزيف.",
-            },
-            {
-                "q": "4. ما الذي يميّز التعلم العميق (Deep Learning) عن التعلم الآلي التقليدي؟",
-                "options": [
-                    "استخدام طبقات متعددة من الشبكات العصبية لاستخلاص أنماط معقدة تلقائيًا",
-                    "الاعتماد الكامل على قواعد مبرمجة يدويًا لكل حالة",
-                    "عدم الحاجة لأي بيانات تدريب على الإطلاق",
-                ],
-                "answer": "استخدام طبقات متعددة من الشبكات العصبية لاستخلاص أنماط معقدة تلقائيًا",
-                "explain": "التعلم العميق يستخدم شبكات عصبية متعددة الطبقات قادرة على استخلاص خصائص معقدة من البيانات الخام تلقائيًا.",
-            },
-            {
-                "q": "5. لماذا يُعد التحيّز الخوارزمي (Algorithmic Bias) قضية أخلاقية مهمة؟",
-                "options": [
-                    "لأنه يزيد من سرعة تنفيذ النموذج",
-                    "لأن النموذج قد يتعلم ويكرر تحيزات موجودة في بيانات التدريب، مما يؤثر على عدالة القرارات",
-                    "لأنه يقلل من تكلفة تشغيل الخوادم",
-                ],
-                "answer": "لأن النموذج قد يتعلم ويكرر تحيزات موجودة في بيانات التدريب، مما يؤثر على عدالة القرارات",
-                "explain": "إذا كانت بيانات التدريب متحيزة، فإن النموذج ينقل هذا التحيّز إلى قراراته، ما قد يؤدي لنتائج غير عادلة تجاه فئات معينة.",
-            },
-            {
-                "q": "6. ما أفضل ممارسة أمنية شخصية من بين التالي؟",
-                "options": [
-                    "استخدام نفس كلمة المرور لكل الحسابات لتسهيل تذكرها",
-                    "تفعيل المصادقة الثنائية (2FA) وتحديث البرمجيات دوريًا",
-                    "مشاركة كلمة المرور مع الأصدقاء المقربين فقط",
-                ],
-                "answer": "تفعيل المصادقة الثنائية (2FA) وتحديث البرمجيات دوريًا",
-                "explain": "المصادقة الثنائية تضيف طبقة حماية إضافية حتى لو سُرقت كلمة المرور، والتحديثات الدورية تسد الثغرات الأمنية المعروفة.",
-            },
-        ]
-
-        answers = []
-        for i, item in enumerate(questions):
-            st.markdown(f'<div class="fun-card"><h4>{item["q"]}</h4></div>', unsafe_allow_html=True)
-            ans = st.radio("اختر الإجابة:", item["options"], index=None, key=f"q{i}_radio")
-            answers.append(ans)
-
-        submitted = st.form_submit_button("🚀 إرسال الإجابات وتسجيل المشاركة")
-
-        if submitted:
-            if not participant_name.strip() or not participant_phone.strip():
-                st.error("⚠️ الرجاء إدخال الاسم ورقم الجوال بشكل صحيح قبل الإرسال.")
-            elif any(a is None for a in answers):
-                st.error("⚠️ الرجاء الإجابة على جميع الأسئلة قبل الإرسال.")
-            else:
-                score = sum(1 for a, item in zip(answers, questions) if a == item["answer"])
-
-                st.success(f"🎉 شكرًا لك يا {participant_name}! تم استلام إجاباتك بنجاح.")
-                st.markdown(
-                    f"""
-                    <div class="fun-card" style="text-align:center;">
-                    <h3>📊 نتيجتك النهائية في التحدي:</h3>
-                    <h1 style="color:#22d3ee;">{score} / {len(questions)}</h1>
-                    <p>تم تسجيل بياناتك ({participant_phone}) في سجل الأكاديمية.</p>
-                    </div>
-                    """,
-                    unsafe_allow_html=True,
-                )
-
-                st.markdown("### 📖 مراجعة الإجابات")
-                for a, item in zip(answers, questions):
-                    correct = a == item["answer"]
-                    icon = "✅" if correct else "❌"
-                    st.markdown(
-                        f'<div class="fun-card">{icon} <b>{item["q"]}</b><br>'
-                        f'الإجابة الصحيحة: {item["answer"]}<br>'
-                        f'<span style="color:#94a3b8;">{item["explain"]}</span></div>',
-                        unsafe_allow_html=True,
-                    )
-
-                if score == len(questions):
-                    st.balloons()
-                    st.markdown(
-                        "<h3 style='text-align:center; color:#4ade80;'>🏆 أداء ممتاز! لقد اجتزت التحدي بجدارة واستحقاق.</h3>",
-                        unsafe_allow_html=True,
-                    )
-
-                try:
-                    payload = {
-                        "name": participant_name,
-                        "phone": participant_phone,
-                        "score": score,
-                        "total": len(questions),
-                        "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                    }
-                    if GOOGLE_SHEET_WEB_APP_URL != "ضع_رابط_ويب_جوجل_هنا":
-                        requests.post(GOOGLE_SHEET_WEB_APP_URL, json=payload, timeout=5)
-                except Exception as e:
-                    print(f"خطأ في الاتصال بالسحابة: {e}")
-
-# ---------------------------------------------------------
-# تذييل الصفحة
-# ---------------------------------------------------------
-st.markdown("---")
 st.markdown(
     """
-    <div style="text-align:center; color:#94a3b8; font-size:13px;">
-    🎓 أكاديمية نمو العالي للتدريب © 2026 — بناء القدرات الرقمية لشباب المستقبل 🌟
-    </div>
-    """,
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap');
+.stApp, .stApp p, .stApp label, .stApp button, .stApp input, .stApp h1, .stApp h2,
+.stApp h3, .stApp h4, .stApp li, .stApp span.stMarkdown { font-family: 'Tajawal', sans-serif; }
+.stApp { direction: rtl; text-align: right; }
+[data-testid="stMarkdownContainer"], [data-testid="stCaptionContainer"],
+[data-testid="stAlert"], label, .stRadio { direction: rtl; text-align: right; }
+.block-container { max-width: 760px; padding-top: 1.5rem; }
+div.stButton > button, div[data-testid="stFormSubmitButton"] > button {
+    width: 100%; border-radius: 12px; font-weight: 700; padding: .6rem 1rem; }
+input[aria-label^="رقم الجوال"] { direction: ltr; text-align: center; letter-spacing: 2px; }
+</style>
+""",
     unsafe_allow_html=True,
 )
+
+# ============================== المحتوى ==============================
+LEVEL1 = [
+    ("ما الذي يميّز الذكاء الاصطناعي عن البرنامج التقليدي؟",
+     ["يتعلّم من البيانات ويحسّن أداءه", "يعمل بدون كهرباء", "لا يحتاج إلى بيانات أبدًا"], 0,
+     "الذكاء الاصطناعي يتعلّم الأنماط من البيانات بدل أن نكتب له كل قاعدة يدويًا."),
+    ("أي مما يلي مثال على تطبيق للذكاء الاصطناعي؟",
+     ["الآلة الحاسبة البسيطة", "التعرّف على الوجه لفتح الجوال", "مصباح كهربائي"], 1,
+     "التعرّف على الوجه يتعلّم من صور كثيرة ليميّز الوجوه."),
+    ("ما أهم مادة خام لتدريب نموذج ذكاء اصطناعي؟",
+     ["البيانات", "الألوان", "الصوت العالي"], 0,
+     "جودة البيانات وكميتها تحدّد جودة النموذج: «مدخلات سيئة = نتائج سيئة»."),
+    ("عندما يقترح يوتيوب فيديو يعجبك، فهو يستخدم:",
+     ["الحظ", "التعلّم من سلوكك وسلوك المستخدمين (أنظمة التوصية)", "اختيار موظف لكل شخص"], 1,
+     "أنظمة التوصية تحلّل ما شاهدته لتتوقّع ما تحبّينه."),
+    ("ما معنى «تدريب النموذج»؟",
+     ["إعطاؤه أمثلة ليتعلّم منها", "إطفاؤه وتشغيله", "رسم شكل له"], 0,
+     "ندرّب النموذج بأمثلة معنونة (مثلاً: هذه تفاحة، وهذه موزة) فيكتشف الفروق."),
+]
+
+LEVEL3 = [
+    ("درّبوا نظامًا للتعرّف على الوجوه بصور أشخاص من بلد واحد فقط. ماذا سيحدث غالبًا؟",
+     ["سيعمل بدقة متساوية مع الجميع", "سيخطئ أكثر مع وجوه لم يرها كثيرًا", "سيصبح أذكى من البشر"], 1,
+     "هذا يسمّى «تحيّز البيانات»: النموذج يتقن ما رآه كثيرًا ويضعف فيما رآه قليلًا."),
+    ("لتقليل التحيّز في النموذج، الأفضل أن:",
+     ["نجمع بيانات متنوعة ومتوازنة", "نحذف نصف البيانات عشوائيًا", "نستخدم صورة واحدة فقط"], 0,
+     "التنوّع والتوازن في البيانات يجعلان النموذج أعدل وأدق."),
+    ("نظام يرفض طلبات التوظيف اعتمادًا على بيانات قديمة فيها تمييز. ما المشكلة؟",
+     ["النموذج يتعلّم التمييز نفسه من البيانات", "الحاسوب بطيء", "الشاشة صغيرة"], 0,
+     "النموذج يعكس ما في بياناته؛ لذلك يجب مراجعة البيانات وعدم الاعتماد الأعمى على النتائج."),
+    ("هل يجب أن يراجع إنسان القرارات المهمة التي يتخذها الذكاء الاصطناعي؟",
+     ["لا، الآلة لا تخطئ أبدًا", "نعم، للمراجعة والمسؤولية", "فقط في أيام العطل"], 1,
+     "الإنسان مسؤول عن القرار النهائي، خاصة في الصحة والتعليم والعمل."),
+]
+
+# (الطول, الاستدارة, الصنف الحقيقي)
+TEST_SET = [
+    (4.5, 6.5, "تفاحة"), (7.5, 3.0, "موزة"), (3.0, 9.0, "تفاحة"),
+    (8.5, 1.5, "موزة"), (6.0, 4.0, "موزة"), (5.0, 6.0, "تفاحة"),
+]
+FRUIT_COLORS = ["#e03b3b", "#f2c200"]  # تفاحة، موزة
+
+LEVELS = [
+    (1, "المستوى 1: ما هو الذكاء الاصطناعي؟", "quiz1"),
+    (2, "المستوى 2: درّبي الآلة 🍎🍌", "train"),
+    (3, "المستوى 3: اكتشفي التحيّز ⚖️", "quiz3"),
+]
+
+# ============================== التخزين في Excel ==============================
+HEADERS = ["المعرّف", "تاريخ التسجيل", "الاسم", "رقم الجوال", "درجة المستوى 1",
+           "نقاط المستوى 2", "درجة المستوى 3", "مجموع النقاط", "آخر تحديث"]
+LEVEL_COL = {1: "درجة المستوى 1", 2: "نقاط المستوى 2", 3: "درجة المستوى 3"}
+
+
+@st.cache_resource
+def file_lock() -> threading.Lock:
+    """قفل مشترك بين جلسات المستخدمات حتى لا يتعارض الحفظ المتزامن."""
+    return threading.Lock()
+
+
+def _open_workbook():
+    if DATA_FILE.exists():
+        return load_workbook(DATA_FILE)
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "اللاعبات"
+    ws.sheet_view.rightToLeft = True
+    ws.append(HEADERS)
+    for c in ws[1]:
+        c.font = Font(bold=True, color="FFFFFF")
+        c.fill = PatternFill("solid", fgColor="1B6F86")
+        c.alignment = Alignment(horizontal="center")
+    for letter, w in zip("ABCDEFGHI", [14, 18, 26, 16, 16, 16, 16, 14, 18]):
+        ws.column_dimensions[letter].width = w
+    return wb
+
+
+def save_player(pid: str, fields: dict) -> None:
+    """إنشاء صف للاعبة أو تحديثه (حسب المعرّف) ثم الحفظ بشكل آمن."""
+    now = datetime.now().strftime("%Y-%m-%d %H:%M")
+    with file_lock():
+        wb = _open_workbook()
+        ws = wb.active
+        row = next((r for r in range(2, ws.max_row + 1)
+                    if ws.cell(r, 1).value == pid), None)
+        if row is None:
+            ws.append([pid, now, "", "", None, None, None, 0, now])
+            row = ws.max_row
+        for col_name, value in fields.items():
+            cell = ws.cell(row, HEADERS.index(col_name) + 1, value)
+            if col_name == "رقم الجوال":
+                cell.number_format = "@"  # يحفظ الصفر في بداية الرقم
+        ws.cell(row, HEADERS.index("آخر تحديث") + 1, now)
+        tmp = DATA_FILE.with_suffix(".tmp")
+        wb.save(tmp)
+        tmp.replace(DATA_FILE)
+
+
+def persist() -> None:
+    s = st.session_state
+    fields = {LEVEL_COL[n]: s.scores[n] for n in (1, 2, 3)}
+    fields["مجموع النقاط"] = total()
+    try:
+        save_player(s.pid, fields)
+    except Exception:  # لا نوقف اللعبة إذا فشل الحفظ
+        s.save_error = True
+
+
+# ============================== الحالة ==============================
+def init_state():
+    defaults = {
+        "stage": "login", "name": "", "phone": "", "pid": "",
+        "scores": {1: None, 2: None, 3: None},
+        "qi": 0, "qc": 0, "picked": None,
+        "train": [], "test": None, "save_error": False,
+    }
+    for k, v in defaults.items():
+        st.session_state.setdefault(k, v)
+
+
+def total() -> int:
+    return sum(v or 0 for v in st.session_state.scores.values())
+
+
+def go(stage: str):
+    st.session_state.stage = stage
+    st.rerun()
+
+
+def start_level(stage: str):
+    s = st.session_state
+    s.qi, s.qc, s.picked, s.train, s.test = 0, 0, None, [], None
+    go(stage)
+
+
+def knn_predict(train, point, k=1):
+    dists = sorted((math.dist((x, y), point), lbl) for x, y, lbl in train)
+    top = [lbl for _, lbl in dists[:k]]
+    return max(set(top), key=top.count)
+
+
+# ============================== الشاشات ==============================
+def header_bar():
+    c1, c2 = st.columns([1, 5])
+    if LOGO.exists():
+        c1.image(str(LOGO), width=70)
+    c2.markdown(f"**أكاديمية نمو | Numo Academy**  \n👩‍🎓 {st.session_state.name}")
+    st.divider()
+
+
+def screen_login():
+    if LOGO.exists():
+        _, mid, _ = st.columns([1, 1, 1])
+        mid.image(str(LOGO), use_container_width=True)
+    st.markdown("<h2 style='text-align:center'>مرحبًا بكِ في رحلة الذكاء الاصطناعي 🤖</h2>",
+                unsafe_allow_html=True)
+    with st.form("login"):
+        name = st.text_input("اسم الطالبة")
+        phone = st.text_input("رقم الجوال (مثال: 0500000000)", max_chars=10)
+        consent = st.checkbox("أوافق على حفظ اسمي ورقم جوالي لدى أكاديمية نمو "
+                              "لأغراض المتابعة والتواصل.")
+        submitted = st.form_submit_button("ابدئي الرحلة ◀", type="primary")
+
+    if not submitted:
+        return
+    name = " ".join(name.split())
+    phone = phone.strip().translate(AR_DIGITS)
+    if len(name) < 2 or not all(ch.isalpha() or ch == " " for ch in name):
+        st.error("⚠️ فضلًا اكتبي اسمك بالحروف فقط (حرفان على الأقل).")
+    elif not re.fullmatch(r"05\d{8}", phone):
+        st.error("⚠️ رقم الجوال يجب أن يكون بالصيغة 0500000000 (10 أرقام تبدأ بـ 05).")
+    elif not consent:
+        st.error("⚠️ فضلًا وافقي على حفظ البيانات للمتابعة.")
+    else:
+        s = st.session_state
+        s.name, s.phone, s.pid = name, phone, uuid.uuid4().hex[:10]
+        try:
+            save_player(s.pid, {"الاسم": name, "رقم الجوال": phone})
+        except Exception:
+            s.save_error = True
+        go("home")
+
+
+def screen_home():
+    s = st.session_state
+    st.markdown(f"### أهلًا بكِ يا {s.name} 👋")
+    st.metric("مجموع نقاطك", total())
+    st.write("ثلاثة مستويات لتتعلّمي أساسيات الذكاء الاصطناعي بالمرح!")
+    for n, title, stage in LEVELS:
+        done = s.scores[n] is not None
+        if st.button(("✅ " if done else "") + title, key=f"lvl{n}"):
+            start_level(stage)
+    if all(v is not None for v in s.scores.values()):
+        st.balloons()
+        st.success(f"🏆 أنهيتِ كل المستويات يا {s.name}! مجموع نقاطك {total()}.")
+    st.divider()
+    if st.button("🚪 إنهاء الجلسة"):
+        for k in list(st.session_state.keys()):
+            del st.session_state[k]
+        st.rerun()
+    if s.save_error:
+        st.warning("تعذّر حفظ النتيجة في الملف، أبلغي المشرفة.")
+
+
+def screen_quiz(n: int):
+    s = st.session_state
+    qs = LEVEL1 if n == 1 else LEVEL3
+    if s.qi >= len(qs):
+        st.markdown(f"## 🎉 أحسنتِ يا {s.name}!")
+        st.write(f"إجاباتك الصحيحة: **{s.qc} من {len(qs)}**  |  نقاط المستوى: **{s.scores[n]}**")
+        if st.button("العودة للقائمة", type="primary"):
+            go("home")
+        return
+
+    q, options, ans, explain = qs[s.qi]
+    st.caption(f"المستوى {n} — سؤال {s.qi + 1} من {len(qs)}")
+    st.markdown(f"#### {q}")
+    for j, opt in enumerate(options):
+        if st.button(opt, key=f"q{n}_{s.qi}_{j}", disabled=s.picked is not None):
+            s.picked = j
+            if j == ans:
+                s.qc += 1
+            st.rerun()
+
+    if s.picked is not None:
+        (st.success if s.picked == ans else st.error)(
+            ("✅ إجابة صحيحة! " if s.picked == ans else "❌ ليست صحيحة. ") + explain)
+        last = s.qi == len(qs) - 1
+        if st.button("إنهاء المستوى ✔" if last else "التالي ◀", type="primary",
+                     key=f"next{n}_{s.qi}"):
+            s.qi += 1
+            s.picked = None
+            if s.qi >= len(qs):
+                new = s.qc * 10
+                s.scores[n] = max(s.scores[n] or 0, new)  # نحتفظ بأفضل نتيجة
+                persist()
+            st.rerun()
+    if st.button("◀ القائمة", key=f"back{n}"):
+        go("home")
+
+
+def draw_chart():
+    s = st.session_state
+    if not s.train:
+        st.info("أضيفي أمثلة لتظهر هنا على الرسم.")
+        return
+    color = alt.Color("النوع:N", legend=alt.Legend(title=None),
+                      scale=alt.Scale(domain=["تفاحة", "موزة"], range=FRUIT_COLORS))
+    x = alt.X("الطول:Q", scale=alt.Scale(domain=[0, 10]))
+    y = alt.Y("الاستدارة:Q", scale=alt.Scale(domain=[0, 10]))
+    df = pd.DataFrame(s.train, columns=["الطول", "الاستدارة", "النوع"])
+    chart = alt.Chart(df).mark_circle(size=230, opacity=0.9, stroke="black",
+                                      strokeWidth=1).encode(x=x, y=y, color=color)
+    if s.test and "preds" in s.test:
+        tdf = pd.DataFrame(s.test["preds"],
+                           columns=["الطول", "الاستدارة", "النوع", "الحقيقي", "النتيجة"])
+        squares = alt.Chart(tdf).mark_square(size=300, strokeWidth=4).encode(
+            x=x, y=y, color=color,
+            stroke=alt.Stroke("النتيجة:N", legend=alt.Legend(title="اختبار الآلة"),
+                              scale=alt.Scale(domain=["صحيح", "خطأ"],
+                                              range=["#2e9e5b", "#000000"])),
+            tooltip=["الطول", "الاستدارة", "النوع", "الحقيقي", "النتيجة"])
+        chart = chart + squares
+    st.altair_chart(chart.properties(height=320), use_container_width=True)
+
+
+def screen_train():
+    s = st.session_state
+    st.markdown("#### 🍎🍌 درّبي الآلة على التفريق بين التفاحة والموزة")
+    st.write("حرّكي المنزلقين لوصف الفاكهة ثم اختاري اسمها. كلما أعطيتِ الآلة أمثلة أكثر "
+             "وأكثر تنوّعًا، تعلّمت أفضل!")
+    c1, c2 = st.columns(2)
+    length = c1.slider("الطول (قصير ← طويل)", 0.0, 10.0, 5.0, 0.5)
+    roundness = c2.slider("الاستدارة (مستقيم ← مستدير)", 0.0, 10.0, 5.0, 0.5)
+
+    b1, b2, b3, b4 = st.columns(4)
+    if b1.button("تفاحة 🍎"):
+        s.train.append((length, roundness, "تفاحة"))
+        s.test = None
+    if b2.button("موزة 🍌"):
+        s.train.append((length, roundness, "موزة"))
+        s.test = None
+    if b3.button("🗑️ مسح"):
+        s.train, s.test = [], None
+    if b4.button("اختبري ✅", type="primary"):
+        labels = {lbl for *_, lbl in s.train}
+        if len(labels) < 2 or len(s.train) < 4:
+            s.test = {"error": "⚠️ أضيفي 4 أمثلة على الأقل، ومن النوعين معًا (تفاحة وموزة)."}
+        else:
+            preds = []
+            for x, y, true in TEST_SET:
+                p = knn_predict(s.train, (x, y))
+                preds.append((x, y, p, true, "صحيح" if p == true else "خطأ"))
+            right = sum(1 for *_, ok in preds if ok == "صحيح")
+            s.test = {"preds": preds, "right": right,
+                      "counts": {l: sum(1 for *_, t in s.train if t == l) for l in labels}}
+            s.scores[2] = max(s.scores[2] or 0, right * 5)  # حتى 30 نقطة
+            persist()
+
+    draw_chart()
+    st.caption(f"أمثلة التدريب: {len(s.train)}")
+
+    t = s.test
+    if t:
+        if "error" in t:
+            st.error(t["error"])
+        else:
+            n = len(TEST_SET)
+            msg = (f"دقة الآلة: **{t['right']} من {n}** "
+                   "(المربعات = اختبار جديد، الإطار الأخضر = تنبؤ صحيح)")
+            if t["right"] == n:
+                st.success("🏆 ممتاز! الآلة تعلّمت من أمثلتك. " + msg)
+            else:
+                st.warning(msg + "  \nجرّبي إضافة أمثلة أكثر وأكثر تنوّعًا قرب الحدود بين النوعين.")
+            c = t["counts"]
+            if max(c.values()) >= 3 * min(c.values()):
+                st.info("⚖️ لاحظي: أمثلتك غير متوازنة بين النوعين، وهذا قد يسبّب تحيّزًا في النموذج!")
+    if st.button("◀ القائمة", key="back2"):
+        go("home")
+
+
+# ============================== لوحة المشرف ==============================
+def admin_password():
+    try:
+        if "ADMIN_PASSWORD" in st.secrets:
+            return str(st.secrets["ADMIN_PASSWORD"])
+    except Exception:
+        pass
+    return os.environ.get("ADMIN_PASSWORD")
+
+
+def admin_panel():
+    pw = admin_password()
+    if not pw:
+        return
+    with st.sidebar.expander("🔒 لوحة المشرفة"):
+        entered = st.text_input("كلمة المرور", type="password", key="admin_pw")
+        if not entered:
+            return
+        if not hmac.compare_digest(entered.encode(), pw.encode()):
+            st.error("كلمة المرور غير صحيحة.")
+            return
+        if not DATA_FILE.exists():
+            st.info("لا توجد بيانات بعد.")
+            return
+        with file_lock():
+            data = DATA_FILE.read_bytes()
+        st.download_button("⬇️ تنزيل ملف اللاعبات (Excel)", data, file_name="players.xlsx",
+                           mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+        st.dataframe(pd.read_excel(DATA_FILE, dtype={"رقم الجوال": str}),
+                     use_container_width=True)
+
+
+# ============================== التشغيل ==============================
+def main():
+    init_state()
+    admin_panel()
+    stage = st.session_state.stage
+    if stage != "login":
+        header_bar()
+    if stage == "login":
+        screen_login()
+    elif stage == "home":
+        screen_home()
+    elif stage == "quiz1":
+        screen_quiz(1)
+    elif stage == "quiz3":
+        screen_quiz(3)
+    elif stage == "train":
+        screen_train()
+
+
+main()
